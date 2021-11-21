@@ -55,14 +55,14 @@ export function getReindentEditOperations(model: ITextModel, startLineNumber: nu
 		return [];
 	}
 
-	const { tabSize, indentSize, insertSpaces } = model.getOptions();
+	const { tabSize, indentSize, insertSpaces, isVimDentation } = model.getOptions();
 	const shiftIndent = (indentation: string, count?: number) => {
 		count = count || 1;
-		return ShiftCommand.shiftIndent(indentation, indentation.length + count, tabSize, indentSize, insertSpaces);
+		return ShiftCommand.shiftIndent(indentation, indentation.length + count, tabSize, indentSize, insertSpaces, isVimDentation);
 	};
 	const unshiftIndent = (indentation: string, count?: number) => {
 		count = count || 1;
-		return ShiftCommand.unshiftIndent(indentation, indentation.length + count, tabSize, indentSize, insertSpaces);
+		return ShiftCommand.unshiftIndent(indentation, indentation.length + count, tabSize, indentSize, insertSpaces, isVimDentation);
 	};
 	let indentEdits: IIdentifiedSingleEditOperation[] = [];
 
@@ -84,7 +84,7 @@ export function getReindentEditOperations(model: ITextModel, startLineNumber: nu
 
 		}
 		if (currentLineText !== adjustedLineContent) {
-			indentEdits.push(EditOperation.replaceMove(new Selection(startLineNumber, 1, startLineNumber, oldIndentation.length + 1), TextModel.normalizeIndentation(globalIndent, indentSize, insertSpaces)));
+			indentEdits.push(EditOperation.replaceMove(new Selection(startLineNumber, 1, startLineNumber, oldIndentation.length + 1), TextModel.normalizeIndentation(globalIndent, indentSize, insertSpaces, tabSize, isVimDentation)));
 		}
 	} else {
 		globalIndent = strings.getLeadingWhitespace(currentLineText);
@@ -115,7 +115,7 @@ export function getReindentEditOperations(model: ITextModel, startLineNumber: nu
 		}
 
 		if (oldIndentation !== idealIndentForNextLine) {
-			indentEdits.push(EditOperation.replaceMove(new Selection(lineNumber, 1, lineNumber, oldIndentation.length + 1), TextModel.normalizeIndentation(idealIndentForNextLine, indentSize, insertSpaces)));
+			indentEdits.push(EditOperation.replaceMove(new Selection(lineNumber, 1, lineNumber, oldIndentation.length + 1), TextModel.normalizeIndentation(idealIndentForNextLine, indentSize, insertSpaces, tabSize, isVimDentation)));
 		}
 
 		// calculate idealIndentForNextLine
@@ -471,15 +471,15 @@ export class AutoIndentOnPaste implements IEditorContribution {
 			return;
 		}
 		const autoIndent = this.editor.getOption(EditorOption.autoIndent);
-		const { tabSize, indentSize, insertSpaces } = model.getOptions();
+		const { tabSize, indentSize, insertSpaces, isVimDentation } = model.getOptions();
 		let textEdits: TextEdit[] = [];
 
 		let indentConverter = {
 			shiftIndent: (indentation: string) => {
-				return ShiftCommand.shiftIndent(indentation, indentation.length + 1, tabSize, indentSize, insertSpaces);
+				return ShiftCommand.shiftIndent(indentation, indentation.length + 1, tabSize, indentSize, insertSpaces, isVimDentation);
 			},
 			unshiftIndent: (indentation: string) => {
-				return ShiftCommand.unshiftIndent(indentation, indentation.length + 1, tabSize, indentSize, insertSpaces);
+				return ShiftCommand.unshiftIndent(indentation, indentation.length + 1, tabSize, indentSize, insertSpaces, isVimDentation);
 			}
 		};
 
