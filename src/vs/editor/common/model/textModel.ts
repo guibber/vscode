@@ -18,13 +18,14 @@ import { Selection } from 'vs/editor/common/core/selection';
 import * as model from 'vs/editor/common/model';
 import { EditStack } from 'vs/editor/common/model/editStack';
 import { guessIndentation } from 'vs/editor/common/model/indentationGuesser';
+import { detectVimDentation } from 'vs/editor/common/model/vimDentation';
 import { IntervalNode, IntervalTree, recomputeMaxEnd } from 'vs/editor/common/model/intervalTree';
 import { PieceTreeTextBufferBuilder } from 'vs/editor/common/model/pieceTreeTextBuffer/pieceTreeTextBufferBuilder';
 import { IModelContentChangedEvent, IModelDecorationsChangedEvent, IModelLanguageChangedEvent, IModelLanguageConfigurationChangedEvent, IModelOptionsChangedEvent, IModelTokensChangedEvent, InternalModelContentChangeEvent, LineInjectedText, ModelInjectedTextChangedEvent, ModelRawChange, ModelRawContentChangedEvent, ModelRawEOLChanged, ModelRawFlush, ModelRawLineChanged, ModelRawLinesDeleted, ModelRawLinesInserted } from 'vs/editor/common/model/textModelEvents';
 import { SearchData, SearchParams, TextModelSearch } from 'vs/editor/common/model/textModelSearch';
 import { TextModelTokenization } from 'vs/editor/common/model/textModelTokens';
 import { getWordAtText } from 'vs/editor/common/model/wordHelper';
-import { FormattingOptions } from 'vs/editor/common/modes';
+import { FormattingOptions, StandardTokenType } from 'vs/editor/common/modes';
 import { ILanguageConfigurationService, ResolvedLanguageConfiguration } from 'vs/editor/common/modes/languageConfigurationRegistry';
 import { NULL_MODE_ID } from 'vs/editor/common/modes/nullMode';
 import { ThemeColor } from 'vs/platform/theme/common/themeService';
@@ -192,6 +193,18 @@ export class TextModel extends Disposable implements model.ITextModel, IDecorati
 
 	public static resolveOptions(textBuffer: model.ITextBuffer, options: model.ITextModelCreationOptions): model.TextModelResolvedOptions {
 		if (options.detectIndentation) {
+			const vimDentation = detectVimDentation(textBuffer);
+			if (vimDentation.isVimOn) {
+				return new model.TextModelResolvedOptions({
+					tabSize: vimDentation.tabSize,
+					indentSize: vimDentation.softTabSize, // TODO@Alex: guess indentSize independent of tabSize
+					insertSpaces: false,
+					trimAutoWhitespace: options.trimAutoWhitespace,
+					defaultEOL: options.defaultEOL,
+					bracketPairColorizationOptions: options.bracketPairColorizationOptions,
+					isVimDentation: true,
+				});
+			}
 			const guessedIndentation = guessIndentation(textBuffer, options.tabSize, options.insertSpaces);
 			return new model.TextModelResolvedOptions({
 				tabSize: guessedIndentation.tabSize,
@@ -200,6 +213,7 @@ export class TextModel extends Disposable implements model.ITextModel, IDecorati
 				trimAutoWhitespace: options.trimAutoWhitespace,
 				defaultEOL: options.defaultEOL,
 				bracketPairColorizationOptions: options.bracketPairColorizationOptions,
+				isVimDentation: false,
 			});
 		}
 
@@ -210,6 +224,7 @@ export class TextModel extends Disposable implements model.ITextModel, IDecorati
 			trimAutoWhitespace: options.trimAutoWhitespace,
 			defaultEOL: options.defaultEOL,
 			bracketPairColorizationOptions: options.bracketPairColorizationOptions,
+			isVimDentation: false,
 		});
 
 	}
@@ -655,6 +670,7 @@ export class TextModel extends Disposable implements model.ITextModel, IDecorati
 		let insertSpaces = (typeof _newOpts.insertSpaces !== 'undefined') ? _newOpts.insertSpaces : this._options.insertSpaces;
 		let trimAutoWhitespace = (typeof _newOpts.trimAutoWhitespace !== 'undefined') ? _newOpts.trimAutoWhitespace : this._options.trimAutoWhitespace;
 		let bracketPairColorizationOptions = (typeof _newOpts.bracketColorizationOptions !== 'undefined') ? _newOpts.bracketColorizationOptions : this._options.bracketPairColorizationOptions;
+		let isVimDentation = (typeof _newOpts.isVimDentation !== 'undefined') ? _newOpts.isVimDentation : this._options.isVimDentation;
 
 		let newOpts = new model.TextModelResolvedOptions({
 			tabSize: tabSize,
@@ -663,6 +679,7 @@ export class TextModel extends Disposable implements model.ITextModel, IDecorati
 			defaultEOL: this._options.defaultEOL,
 			trimAutoWhitespace: trimAutoWhitespace,
 			bracketPairColorizationOptions,
+			isVimDentation: isVimDentation,
 		});
 
 		if (this._options.equals(newOpts)) {
@@ -711,7 +728,7 @@ export class TextModel extends Disposable implements model.ITextModel, IDecorati
 		return result;
 	}
 
-	public static normalizeIndentation(str: string, indentSize: number, insertSpaces: boolean): string {
+	public static normalizeIndentation(str: string, indentSize: number, insertSpaces: boolean, tabSize: number, isVimDentation: boolean): string {
 		let firstNonWhitespaceIndex = strings.firstNonWhitespaceIndex(str);
 		if (firstNonWhitespaceIndex === -1) {
 			firstNonWhitespaceIndex = str.length;
@@ -721,7 +738,7 @@ export class TextModel extends Disposable implements model.ITextModel, IDecorati
 
 	public normalizeIndentation(str: string): string {
 		this._assertNotDisposed();
-		return TextModel.normalizeIndentation(str, this._options.indentSize, this._options.insertSpaces);
+		return TextModel.normalizeIndentation(str, this._options.indentSize, this._options.insertSpaces, this._options.tabSize, this._options.isVimDentation);
 	}
 
 	//#endregion
@@ -2124,6 +2141,11 @@ export class TextModel extends Disposable implements model.ITextModel, IDecorati
 		const position = this.validatePosition(new Position(lineNumber, column));
 		const lineTokens = this.getLineTokens(position.lineNumber);
 		return lineTokens.getLanguageId(lineTokens.findTokenIndexAtOffset(position.column - 1));
+	}
+
+	public getTokenTypeIfInsertingCharacter(lineNumber: number, column: number, character: string): StandardTokenType {
+		const position = this.validatePosition(new Position(lineNumber, column));
+		return this._tokenization.getTokenTypeIfInsertingCharacter(position, character);
 	}
 
 	private getLanguageConfiguration(languageId: string): ResolvedLanguageConfiguration {
