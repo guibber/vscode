@@ -12,6 +12,7 @@ import { ICommand, ICursorStateComputerData, IEditOperationBuilder } from 'vs/ed
 import { ITextModel } from 'vs/editor/common/model';
 import { LanguageConfigurationRegistry } from 'vs/editor/common/modes/languageConfigurationRegistry';
 import { EditorAutoIndentStrategy } from 'vs/editor/common/config/editorOptions';
+import { vimCalculateWhitespaceCountWithoutIndent, vimCalculateWhitespaceCountWithIndent, vimGenerateWhitespaceText } from 'vs/editor/common/model/vimDentation';
 
 export interface IShiftCommandOpts {
 	isUnshift: boolean;
@@ -20,6 +21,7 @@ export interface IShiftCommandOpts {
 	insertSpaces: boolean;
 	useTabStops: boolean;
 	autoIndent: EditorAutoIndentStrategy;
+	isVimDentation: boolean;
 }
 
 const repeatCache: { [str: string]: string[]; } = Object.create(null);
@@ -39,11 +41,15 @@ export function cachedStringRepeat(str: string, count: number): string {
 
 export class ShiftCommand implements ICommand {
 
-	public static unshiftIndent(line: string, column: number, tabSize: number, indentSize: number, insertSpaces: boolean): string {
+	public static unshiftIndent(line: string, column: number, tabSize: number, indentSize: number, insertSpaces: boolean, isVimDentation: boolean): string {
 		// Determine the visible column where the content starts
 		const contentStartVisibleColumn = CursorColumns.visibleColumnFromColumn(line, column, tabSize);
 
-		if (insertSpaces) {
+		if (isVimDentation) {
+			let desiredWsCount = vimCalculateWhitespaceCountWithoutIndent(line, tabSize);
+			let replaceText = vimGenerateWhitespaceText(desiredWsCount, tabSize);
+			return replaceText;
+		} else if (insertSpaces) {
 			const indent = cachedStringRepeat(' ', indentSize);
 			const desiredTabStop = CursorColumns.prevIndentTabStop(contentStartVisibleColumn, indentSize);
 			const indentCount = desiredTabStop / indentSize; // will be an integer
@@ -56,11 +62,15 @@ export class ShiftCommand implements ICommand {
 		}
 	}
 
-	public static shiftIndent(line: string, column: number, tabSize: number, indentSize: number, insertSpaces: boolean): string {
+	public static shiftIndent(line: string, column: number, tabSize: number, indentSize: number, insertSpaces: boolean, isVimDentation: boolean): string {
 		// Determine the visible column where the content starts
 		const contentStartVisibleColumn = CursorColumns.visibleColumnFromColumn(line, column, tabSize);
 
-		if (insertSpaces) {
+		if (isVimDentation) {
+			let desiredWsCount = vimCalculateWhitespaceCountWithIndent(line, tabSize);
+			let replaceText = vimGenerateWhitespaceText(desiredWsCount, tabSize);
+			return replaceText;
+		} else if (insertSpaces) {
 			const indent = cachedStringRepeat(' ', indentSize);
 			const desiredTabStop = CursorColumns.nextIndentTabStop(contentStartVisibleColumn, indentSize);
 			const indentCount = desiredTabStop / indentSize; // will be an integer
@@ -103,7 +113,7 @@ export class ShiftCommand implements ICommand {
 			endLine = endLine - 1;
 		}
 
-		const { tabSize, indentSize, insertSpaces } = this._opts;
+		const { tabSize, indentSize, insertSpaces, isVimDentation } = this._opts;
 		const shouldIndentEmptyLines = (startLine === endLine);
 
 		if (this._opts.useTabStops) {
@@ -178,9 +188,9 @@ export class ShiftCommand implements ICommand {
 
 				let desiredIndent: string;
 				if (this._opts.isUnshift) {
-					desiredIndent = ShiftCommand.unshiftIndent(lineText, indentationEndIndex + 1, tabSize, indentSize, insertSpaces);
+					desiredIndent = ShiftCommand.unshiftIndent(lineText, indentationEndIndex + 1, tabSize, indentSize, insertSpaces, isVimDentation);
 				} else {
-					desiredIndent = ShiftCommand.shiftIndent(lineText, indentationEndIndex + 1, tabSize, indentSize, insertSpaces);
+					desiredIndent = ShiftCommand.shiftIndent(lineText, indentationEndIndex + 1, tabSize, indentSize, insertSpaces, isVimDentation);
 				}
 
 				this._addEditOperation(builder, new Range(lineNumber, 1, lineNumber, indentationEndIndex + 1), desiredIndent);

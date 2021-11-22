@@ -61,6 +61,7 @@ export class CursorConfiguration {
 	public readonly tabSize: number;
 	public readonly indentSize: number;
 	public readonly insertSpaces: boolean;
+	public readonly isVimDentation: boolean;
 	public readonly stickyTabStops: boolean;
 	public readonly pageSize: number;
 	public readonly lineHeight: number;
@@ -115,6 +116,7 @@ export class CursorConfiguration {
 		this.tabSize = modelOptions.tabSize;
 		this.indentSize = modelOptions.indentSize;
 		this.insertSpaces = modelOptions.insertSpaces;
+		this.isVimDentation = modelOptions.isVimDentation;
 		this.stickyTabStops = options.get(EditorOption.stickyTabStops);
 		this.lineHeight = options.get(EditorOption.lineHeight);
 		this.pageSize = Math.max(1, Math.floor(layoutInfo.height / this.lineHeight) - 2);
@@ -163,7 +165,7 @@ export class CursorConfiguration {
 	}
 
 	public normalizeIndentation(str: string): string {
-		return TextModel.normalizeIndentation(str, this.indentSize, this.insertSpaces);
+		return TextModel.normalizeIndentation(str, this.indentSize, this.insertSpaces, this.tabSize, this.isVimDentation);
 	}
 
 	private static _getElectricCharacters(languageId: string): string[] | null {
@@ -287,31 +289,11 @@ export class SingleCursorState {
 	}
 
 	private static _computeSelection(selectionStart: Range, position: Position): Selection {
-		let startLineNumber: number, startColumn: number, endLineNumber: number, endColumn: number;
-		if (selectionStart.isEmpty()) {
-			startLineNumber = selectionStart.startLineNumber;
-			startColumn = selectionStart.startColumn;
-			endLineNumber = position.lineNumber;
-			endColumn = position.column;
+		if (selectionStart.isEmpty() || !position.isBeforeOrEqual(selectionStart.getStartPosition())) {
+			return Selection.fromPositions(selectionStart.getStartPosition(), position);
 		} else {
-			if (position.isBeforeOrEqual(selectionStart.getStartPosition())) {
-				startLineNumber = selectionStart.endLineNumber;
-				startColumn = selectionStart.endColumn;
-				endLineNumber = position.lineNumber;
-				endColumn = position.column;
-			} else {
-				startLineNumber = selectionStart.startLineNumber;
-				startColumn = selectionStart.startColumn;
-				endLineNumber = position.lineNumber;
-				endColumn = position.column;
-			}
+			return Selection.fromPositions(selectionStart.getEndPosition(), position);
 		}
-		return new Selection(
-			startLineNumber,
-			startColumn,
-			endLineNumber,
-			endColumn
-		);
 	}
 }
 
@@ -365,13 +347,11 @@ export class CursorState {
 	}
 
 	public static fromModelSelection(modelSelection: ISelection): PartialModelCursorState {
-		const selectionStartLineNumber = modelSelection.selectionStartLineNumber;
-		const selectionStartColumn = modelSelection.selectionStartColumn;
-		const positionLineNumber = modelSelection.positionLineNumber;
-		const positionColumn = modelSelection.positionColumn;
+		const selection = Selection.liftSelection(modelSelection);
 		const modelState = new SingleCursorState(
-			new Range(selectionStartLineNumber, selectionStartColumn, selectionStartLineNumber, selectionStartColumn), 0,
-			new Position(positionLineNumber, positionColumn), 0
+			Range.fromPositions(selection.getSelectionStart()),
+			0,
+			selection.getPosition(), 0
 		);
 		return CursorState.fromModelState(modelState);
 	}
