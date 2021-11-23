@@ -6022,6 +6022,8 @@ declare namespace monaco.languages {
 	export interface SelectedSuggestionInfo {
 		range: IRange;
 		text: string;
+		isSnippetText: boolean;
+		completionKind: CompletionItemKind;
 	}
 
 	export interface InlineCompletion {
