@@ -2533,7 +2533,7 @@ export class TextModel extends Disposable implements model.ITextModel, IDecorati
 						renderHorizontalEndLineAtTheBottom = true;
 					}
 				}
-				// TODO: Consider indentation when computing guideVisibleColumn
+
 				const start = pair.openingBracketRange.getStartPosition();
 				const end = (pair.closingBracketRange?.getStartPosition() ?? pair.range.getEndPosition());
 
