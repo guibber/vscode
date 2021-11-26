@@ -1809,7 +1809,7 @@ declare namespace monaco.editor {
 		 */
 		getLineLastNonWhitespaceColumn(lineNumber: number): number;
 		/**
-		 * Create a valid position,
+		 * Create a valid position.
 		 */
 		validatePosition(position: IPosition): Position;
 		/**
@@ -1844,7 +1844,7 @@ declare namespace monaco.editor {
 		 */
 		getPositionAt(offset: number): Position;
 		/**
-		 * Get a range covering the entire model
+		 * Get a range covering the entire model.
 		 */
 		getFullModelRange(): Range;
 		/**
@@ -5901,11 +5901,10 @@ declare namespace monaco.languages {
 		/**
 		 * A string or snippet that should be inserted in a document when selecting
 		 * this completion.
-		 * is used.
 		 */
 		insertText: string;
 		/**
-		 * Addition rules (as bitmask) that should be applied when inserting
+		 * Additional rules (as bitmask) that should be applied when inserting
 		 * this completion.
 		 */
 		insertTextRules?: CompletionItemInsertTextRule;
