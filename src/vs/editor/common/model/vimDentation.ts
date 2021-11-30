@@ -15,6 +15,8 @@ export interface IVimIndentation {
 
 export function detectVimDentation(source: ITextBuffer): IVimIndentation {
 	const MAX_LINE_FOR_VIM_DETECTION = 4;
+	const DEFAULT_VIM_TABSTOP = 8;
+	const DEFAULT_VIM_SOFT_TABSTOP = 4;
 	const linesToCheck = Math.min(source.getLineCount(), MAX_LINE_FOR_VIM_DETECTION);
 	let isVimOn = false;
 	for (let lineNumber = 1; lineNumber <= linesToCheck && !isVimOn; lineNumber++) {
@@ -22,17 +24,42 @@ export function detectVimDentation(source: ITextBuffer): IVimIndentation {
 		if (lineContent.indexOf('vim') >= 0) {
 			return {
 				isVimOn: true,
-				tabSize: 8,
-				softTabSize: 4,
+				tabSize: extractSettingFromLineText(lineContent, 'tbs', DEFAULT_VIM_TABSTOP),
+				softTabSize: extractSettingFromLineText(lineContent, 'sts', DEFAULT_VIM_SOFT_TABSTOP),
 			};
 		}
 
 	}
 	return {
 		isVimOn: false,
-		tabSize: 8,
-		softTabSize: 4,
+		tabSize: DEFAULT_VIM_TABSTOP,
+		softTabSize: DEFAULT_VIM_SOFT_TABSTOP,
 	};
+}
+
+function extractSettingFromLineText(lineText: string, key: string, defaultValue: number): number {
+	let pos = lineText.indexOf(key);
+	if (pos !== -1) {
+		// find =
+		for (pos += key.length; pos < lineText.length; pos++) {
+			if (lineText.charAt(pos) !== '=')
+				continue;
+			break;
+		}
+		if (lineText.charAt(pos) !== '=')
+			return defaultValue;
+		pos++; // eat the =
+		// skip spaces
+		for (; pos < lineText.length; pos++) {
+			if (lineText.charAt(pos) === ' ' || lineText.charAt(pos) === '/t')
+				continue;
+			break;
+		}
+		// extract single-digit setting
+		let setting = pos < lineText.length ? Number(lineText.charAt(pos)) : NaN;
+		return isNaN(setting) ? defaultValue : setting;
+	}
+	return defaultValue;
 }
 
 export function vimCalculateWhitespaceCountWithIndent(lineText: string, tabSize: number): number {
