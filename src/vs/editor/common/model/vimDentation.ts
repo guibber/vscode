@@ -24,7 +24,7 @@ export function detectVimDentation(source: ITextBuffer): IVimIndentation {
 		if (lineContent.indexOf('vim') >= 0) {
 			return {
 				isVimOn: true,
-				tabSize: extractSettingFromLineText(lineContent, 'tbs', DEFAULT_VIM_TABSTOP),
+				tabSize: extractSettingFromLineText(lineContent, 'ts', DEFAULT_VIM_TABSTOP),
 				softTabSize: extractSettingFromLineText(lineContent, 'sts', DEFAULT_VIM_SOFT_TABSTOP),
 			};
 		}
