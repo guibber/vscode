@@ -14,6 +14,8 @@ import { Selection } from 'vs/editor/common/core/selection';
 import { ICommand } from 'vs/editor/common/editorCommon';
 import { StandardAutoClosingPairConditional } from 'vs/editor/common/languages/languageConfiguration';
 import { Position } from 'vs/editor/common/core/position';
+import { vimGetLineLeftOfPosition, cachedStringRepeat /*vimCalculateWhitespacePositionCountWithoutIndent, vimCalculateWhitespaceCountWithoutIndent, vimCalculateWhitespaceCountWithIndent,*/ } from 'vs/editor/common/model/vimDentation';
+
 
 export class DeleteOperations {
 
@@ -150,6 +152,15 @@ export class DeleteOperations {
 		const commands: Array<ICommand | null> = [];
 		let shouldPushStackElementBefore = (prevEditOperationType !== EditOperationType.DeletingLeft);
 		for (let i = 0, len = selections.length; i < len; i++) {
+			const line = model.getLineContent(selections[i].startLineNumber);
+			const current = vimGetLineLeftOfPosition(line, selections[i].positionColumn);
+			const firstNonWs = model.getLineFirstNonWhitespaceColumn(selections[i].startLineNumber);
+			const replaceText = config.isVimDentation
+				&& current.length > 0
+				&& current.charAt(current.length - 1) === '\t'
+				&& (selections[i].positionColumn <= firstNonWs || firstNonWs === 0)
+				? cachedStringRepeat(' ', config.tabSize / 2)
+				: '';
 			const deleteRange = DeleteOperations.getDeleteRange(selections[i], model, config);
 
 			// Ignore empty delete ranges, as they have no effect
@@ -163,7 +174,7 @@ export class DeleteOperations {
 				shouldPushStackElementBefore = true;
 			}
 
-			commands[i] = new ReplaceCommand(deleteRange, '');
+			commands[i] = new ReplaceCommand(deleteRange, replaceText);
 		}
 		return [shouldPushStackElementBefore, commands];
 

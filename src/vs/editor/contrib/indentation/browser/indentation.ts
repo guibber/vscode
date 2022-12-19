@@ -57,14 +57,14 @@ export function getReindentEditOperations(model: ITextModel, languageConfigurati
 		return [];
 	}
 
-	const { tabSize, indentSize, insertSpaces } = model.getOptions();
+	const { tabSize, indentSize, insertSpaces, isVimDentation } = model.getOptions();
 	const shiftIndent = (indentation: string, count?: number) => {
 		count = count || 1;
-		return ShiftCommand.shiftIndent(indentation, indentation.length + count, tabSize, indentSize, insertSpaces);
+		return ShiftCommand.shiftIndent(indentation, indentation.length + count, tabSize, indentSize, insertSpaces, isVimDentation);
 	};
 	const unshiftIndent = (indentation: string, count?: number) => {
 		count = count || 1;
-		return ShiftCommand.unshiftIndent(indentation, indentation.length + count, tabSize, indentSize, insertSpaces);
+		return ShiftCommand.unshiftIndent(indentation, indentation.length + count, tabSize, indentSize, insertSpaces, isVimDentation);
 	};
 	const indentEdits: ISingleEditOperation[] = [];
 
@@ -509,15 +509,15 @@ export class AutoIndentOnPaste implements IEditorContribution {
 			return;
 		}
 		const autoIndent = this.editor.getOption(EditorOption.autoIndent);
-		const { tabSize, indentSize, insertSpaces } = model.getOptions();
+		const { tabSize, indentSize, insertSpaces, isVimDentation } = model.getOptions();
 		const textEdits: TextEdit[] = [];
 
 		const indentConverter = {
 			shiftIndent: (indentation: string) => {
-				return ShiftCommand.shiftIndent(indentation, indentation.length + 1, tabSize, indentSize, insertSpaces);
+				return ShiftCommand.shiftIndent(indentation, indentation.length + 1, tabSize, indentSize, insertSpaces, isVimDentation);
 			},
 			unshiftIndent: (indentation: string) => {
-				return ShiftCommand.unshiftIndent(indentation, indentation.length + 1, tabSize, indentSize, insertSpaces);
+				return ShiftCommand.unshiftIndent(indentation, indentation.length + 1, tabSize, indentSize, insertSpaces, isVimDentation);
 			}
 		};
 

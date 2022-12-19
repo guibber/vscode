@@ -23,6 +23,8 @@ import { EditorAutoIndentStrategy } from 'vs/editor/common/config/editorOptions'
 import { createScopedLineTokens } from 'vs/editor/common/languages/supports';
 import { getIndentActionForType, getIndentForEnter, getInheritIndentForLine } from 'vs/editor/common/languages/autoIndent';
 import { getEnterAction } from 'vs/editor/common/languages/enterAction';
+import { vimCalculateWhitespaceCountWithIndent, /* vimGenerateNextWhitespaceText,*/ vimGenerateWhitespaceText } from 'vs/editor/common/model/vimDentation';
+
 
 export class TypeOperations {
 
@@ -39,7 +41,8 @@ export class TypeOperations {
 				indentSize: config.indentSize,
 				insertSpaces: config.insertSpaces,
 				useTabStops: config.useTabStops,
-				autoIndent: config.autoIndent
+				autoIndent: config.autoIndent,
+				isVimDentation: config.isVimDentation,
 			}, config.languageConfigurationService);
 		}
 		return commands;
@@ -54,7 +57,8 @@ export class TypeOperations {
 				indentSize: config.indentSize,
 				insertSpaces: config.insertSpaces,
 				useTabStops: config.useTabStops,
-				autoIndent: config.autoIndent
+				autoIndent: config.autoIndent,
+				isVimDentation: config.isVimDentation,
 			}, config.languageConfigurationService);
 		}
 		return commands;
@@ -62,12 +66,12 @@ export class TypeOperations {
 
 	public static shiftIndent(config: CursorConfiguration, indentation: string, count?: number): string {
 		count = count || 1;
-		return ShiftCommand.shiftIndent(indentation, indentation.length + count, config.tabSize, config.indentSize, config.insertSpaces);
+		return ShiftCommand.shiftIndent(indentation, indentation.length + count, config.tabSize, config.indentSize, config.insertSpaces, config.isVimDentation);
 	}
 
 	public static unshiftIndent(config: CursorConfiguration, indentation: string, count?: number): string {
 		count = count || 1;
-		return ShiftCommand.unshiftIndent(indentation, indentation.length + count, config.tabSize, config.indentSize, config.insertSpaces);
+		return ShiftCommand.unshiftIndent(indentation, indentation.length + count, config.tabSize, config.indentSize, config.insertSpaces, config.isVimDentation);
 	}
 
 	private static _distributedPaste(config: CursorConfiguration, model: ICursorSimpleModel, selections: Selection[], text: string[]): EditOperationResult {
@@ -202,7 +206,13 @@ export class TypeOperations {
 
 	private static _replaceJumpToNextIndent(config: CursorConfiguration, model: ICursorSimpleModel, selection: Selection, insertsAutoWhitespace: boolean): ReplaceCommand {
 		let typeText = '';
+		if (config.isVimDentation && selection.positionColumn <= model.getLineFirstNonWhitespaceColumn(selection.startLineNumber)) {
+			const desiredWsCount = vimCalculateWhitespaceCountWithIndent(model.getLineContent(selection.startLineNumber), config.tabSize);
+			typeText = vimGenerateWhitespaceText(desiredWsCount, config.tabSize);
 
+			const range = new Range(selection.startLineNumber, 1, selection.startLineNumber, selection.positionColumn);
+			return new ReplaceCommand(range, typeText);
+		}
 		const position = selection.getStartPosition();
 		if (config.insertSpaces) {
 			const visibleColumnFromColumn = config.visibleColumnFromColumn(model, position);
@@ -228,12 +238,20 @@ export class TypeOperations {
 				const lineText = model.getLineContent(selection.startLineNumber);
 
 				if (/^\s*$/.test(lineText) && model.tokenization.isCheapToTokenize(selection.startLineNumber)) {
-					let goodIndent = this._goodIndentForLine(config, model, selection.startLineNumber);
-					goodIndent = goodIndent || '\t';
-					const possibleTypeText = config.normalizeIndentation(goodIndent);
-					if (!lineText.startsWith(possibleTypeText)) {
-						commands[i] = new ReplaceCommand(new Range(selection.startLineNumber, 1, selection.startLineNumber, lineText.length + 1), possibleTypeText, true);
-						continue;
+					if (config.isVimDentation) {
+						const desiredWsCount = vimCalculateWhitespaceCountWithIndent(lineText, config.tabSize);
+						const replaceText = vimGenerateWhitespaceText(desiredWsCount, config.tabSize);
+						commands[i] = new ReplaceCommand(new Range(selection.startLineNumber, 1, selection.startLineNumber, lineText.length + 1), replaceText, true);
+						return commands;
+					}
+					else {
+						let goodIndent = this._goodIndentForLine(config, model, selection.startLineNumber);
+						goodIndent = goodIndent || '\t';
+						const possibleTypeText = config.normalizeIndentation(goodIndent);
+						if (!lineText.startsWith(possibleTypeText)) {
+							commands[i] = new ReplaceCommand(new Range(selection.startLineNumber, 1, selection.startLineNumber, lineText.length + 1), possibleTypeText, true);
+							continue;
+						}
 					}
 				}
 
@@ -254,7 +272,8 @@ export class TypeOperations {
 					indentSize: config.indentSize,
 					insertSpaces: config.insertSpaces,
 					useTabStops: config.useTabStops,
-					autoIndent: config.autoIndent
+					autoIndent: config.autoIndent,
+					isVimDentation: config.isVimDentation,
 				}, config.languageConfigurationService);
 			}
 		}
