@@ -17,6 +17,7 @@ import { URI } from 'vs/base/common/uri';
 import { ISingleEditOperation } from 'vs/editor/common/core/editOperation';
 import { countEOL } from 'vs/editor/common/core/eolCounter';
 import { normalizeIndentation } from 'vs/editor/common/core/indentation';
+import { detectVimDentation } from 'vs/editor/common/model/vimDentation';
 import { IPosition, Position } from 'vs/editor/common/core/position';
 import { IRange, Range } from 'vs/editor/common/core/range';
 import { Selection } from 'vs/editor/common/core/selection';
@@ -186,10 +187,23 @@ export class TextModel extends Disposable implements model.ITextModel, IDecorati
 		trimAutoWhitespace: EDITOR_MODEL_DEFAULTS.trimAutoWhitespace,
 		largeFileOptimizations: EDITOR_MODEL_DEFAULTS.largeFileOptimizations,
 		bracketPairColorizationOptions: EDITOR_MODEL_DEFAULTS.bracketPairColorizationOptions,
+		isVimDentation: false,
 	};
 
 	public static resolveOptions(textBuffer: model.ITextBuffer, options: model.ITextModelCreationOptions): model.TextModelResolvedOptions {
 		if (options.detectIndentation) {
+			const vimDentation = detectVimDentation(textBuffer);
+			if (vimDentation.isVimOn) {
+				return new model.TextModelResolvedOptions({
+					tabSize: vimDentation.tabSize,
+					indentSize: vimDentation.softTabSize, // TODO@Alex: guess indentSize independent of tabSize
+					insertSpaces: false,
+					trimAutoWhitespace: options.trimAutoWhitespace,
+					defaultEOL: options.defaultEOL,
+					bracketPairColorizationOptions: options.bracketPairColorizationOptions,
+					isVimDentation: true,
+				});
+			}
 			const guessedIndentation = guessIndentation(textBuffer, options.tabSize, options.insertSpaces);
 			return new model.TextModelResolvedOptions({
 				tabSize: guessedIndentation.tabSize,
@@ -198,6 +212,7 @@ export class TextModel extends Disposable implements model.ITextModel, IDecorati
 				trimAutoWhitespace: options.trimAutoWhitespace,
 				defaultEOL: options.defaultEOL,
 				bracketPairColorizationOptions: options.bracketPairColorizationOptions,
+				isVimDentation: false,
 			});
 		}
 
@@ -625,6 +640,7 @@ export class TextModel extends Disposable implements model.ITextModel, IDecorati
 		const insertSpaces = (typeof _newOpts.insertSpaces !== 'undefined') ? _newOpts.insertSpaces : this._options.insertSpaces;
 		const trimAutoWhitespace = (typeof _newOpts.trimAutoWhitespace !== 'undefined') ? _newOpts.trimAutoWhitespace : this._options.trimAutoWhitespace;
 		const bracketPairColorizationOptions = (typeof _newOpts.bracketColorizationOptions !== 'undefined') ? _newOpts.bracketColorizationOptions : this._options.bracketPairColorizationOptions;
+		const isVimDentation = (typeof _newOpts.isVimDentation !== 'undefined') ? _newOpts.isVimDentation : this._options.isVimDentation;
 
 		const newOpts = new model.TextModelResolvedOptions({
 			tabSize: tabSize,
@@ -633,6 +649,7 @@ export class TextModel extends Disposable implements model.ITextModel, IDecorati
 			defaultEOL: this._options.defaultEOL,
 			trimAutoWhitespace: trimAutoWhitespace,
 			bracketPairColorizationOptions,
+			isVimDentation,
 		});
 
 		if (this._options.equals(newOpts)) {

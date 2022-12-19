@@ -55,6 +55,7 @@ export interface IRelaxedTextModelCreationOptions {
 	isForSimpleWidget?: boolean;
 	largeFileOptimizations?: boolean;
 	bracketColorizationOptions?: BracketPairColorizationOptions;
+	isVimDentation?: boolean;
 }
 
 function resolveOptions(_options: IRelaxedTextModelCreationOptions): ITextModelCreationOptions {
@@ -69,6 +70,7 @@ function resolveOptions(_options: IRelaxedTextModelCreationOptions): ITextModelC
 		isForSimpleWidget: (typeof _options.isForSimpleWidget === 'undefined' ? defaultOptions.isForSimpleWidget : _options.isForSimpleWidget),
 		largeFileOptimizations: (typeof _options.largeFileOptimizations === 'undefined' ? defaultOptions.largeFileOptimizations : _options.largeFileOptimizations),
 		bracketPairColorizationOptions: (typeof _options.bracketColorizationOptions === 'undefined' ? defaultOptions.bracketPairColorizationOptions : _options.bracketColorizationOptions),
+		isVimDentation: (typeof _options.isVimDentation === 'undefined' ? defaultOptions.isVimDentation : _options.isVimDentation),
 	};
 }
 

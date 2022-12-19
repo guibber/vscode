@@ -429,6 +429,7 @@ export class TextModelResolvedOptions {
 	readonly defaultEOL: DefaultEndOfLine;
 	readonly trimAutoWhitespace: boolean;
 	readonly bracketPairColorizationOptions: BracketPairColorizationOptions;
+	readonly isVimDentation: boolean;
 
 	public get originalIndentSize(): number | 'tabSize' {
 		return this._indentSizeIsTabSize ? 'tabSize' : this.indentSize;
@@ -444,6 +445,7 @@ export class TextModelResolvedOptions {
 		defaultEOL: DefaultEndOfLine;
 		trimAutoWhitespace: boolean;
 		bracketPairColorizationOptions: BracketPairColorizationOptions;
+		isVimDentation: boolean;
 	}) {
 		this.tabSize = Math.max(1, src.tabSize | 0);
 		if (src.indentSize === 'tabSize') {
@@ -457,6 +459,7 @@ export class TextModelResolvedOptions {
 		this.defaultEOL = src.defaultEOL | 0;
 		this.trimAutoWhitespace = Boolean(src.trimAutoWhitespace);
 		this.bracketPairColorizationOptions = src.bracketPairColorizationOptions;
+		this.isVimDentation = src.isVimDentation;
 	}
 
 	/**
@@ -470,6 +473,7 @@ export class TextModelResolvedOptions {
 			&& this.insertSpaces === other.insertSpaces
 			&& this.defaultEOL === other.defaultEOL
 			&& this.trimAutoWhitespace === other.trimAutoWhitespace
+			&& this.isVimDentation === other.isVimDentation
 			&& equals(this.bracketPairColorizationOptions, other.bracketPairColorizationOptions)
 		);
 	}
@@ -483,6 +487,7 @@ export class TextModelResolvedOptions {
 			indentSize: this.indentSize !== newOpts.indentSize,
 			insertSpaces: this.insertSpaces !== newOpts.insertSpaces,
 			trimAutoWhitespace: this.trimAutoWhitespace !== newOpts.trimAutoWhitespace,
+			isVimDentation: this.isVimDentation !== newOpts.isVimDentation,
 		};
 	}
 }
@@ -500,6 +505,7 @@ export interface ITextModelCreationOptions {
 	isForSimpleWidget: boolean;
 	largeFileOptimizations: boolean;
 	bracketPairColorizationOptions: BracketPairColorizationOptions;
+	isVimDentation: boolean;
 }
 
 export interface BracketPairColorizationOptions {
@@ -513,6 +519,7 @@ export interface ITextModelUpdateOptions {
 	insertSpaces?: boolean;
 	trimAutoWhitespace?: boolean;
 	bracketColorizationOptions?: BracketPairColorizationOptions;
+	isVimDentation?: boolean;
 }
 
 export class FindMatch {

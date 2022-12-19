@@ -246,7 +246,8 @@ export class ModelService extends Disposable implements IModelService {
 			defaultEOL: newDefaultEOL,
 			trimAutoWhitespace: trimAutoWhitespace,
 			largeFileOptimizations: largeFileOptimizations,
-			bracketPairColorizationOptions
+			bracketPairColorizationOptions,
+			isVimDentation: false
 		};
 	}
 

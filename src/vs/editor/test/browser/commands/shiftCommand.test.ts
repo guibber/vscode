@@ -60,6 +60,7 @@ function testShiftCommand(lines: string[], languageId: string | null, useTabStop
 		insertSpaces: false,
 		useTabStops: useTabStops,
 		autoIndent: EditorAutoIndentStrategy.Full,
+		isVimDentation: false,
 	}, accessor.get(ILanguageConfigurationService)), expectedLines, expectedSelection, undefined, prepare);
 }
 
@@ -71,6 +72,7 @@ function testUnshiftCommand(lines: string[], languageId: string | null, useTabSt
 		insertSpaces: false,
 		useTabStops: useTabStops,
 		autoIndent: EditorAutoIndentStrategy.Full,
+		isVimDentation: false,
 	}, accessor.get(ILanguageConfigurationService)), expectedLines, expectedSelection, undefined, prepare);
 }
 
@@ -683,6 +685,7 @@ suite('Editor Commands - ShiftCommand', () => {
 				insertSpaces: true,
 				useTabStops: false,
 				autoIndent: EditorAutoIndentStrategy.Full,
+				isVimDentation: false,
 			}, new TestLanguageConfigurationService()),
 			[
 				'       Written | Numeric',
@@ -729,6 +732,7 @@ suite('Editor Commands - ShiftCommand', () => {
 				insertSpaces: true,
 				useTabStops: false,
 				autoIndent: EditorAutoIndentStrategy.Full,
+				isVimDentation: false,
 			}, new TestLanguageConfigurationService()),
 			[
 				'   Written | Numeric',
@@ -775,6 +779,7 @@ suite('Editor Commands - ShiftCommand', () => {
 				insertSpaces: false,
 				useTabStops: false,
 				autoIndent: EditorAutoIndentStrategy.Full,
+				isVimDentation: false,
 			}, new TestLanguageConfigurationService()),
 			[
 				'   Written | Numeric',
@@ -821,6 +826,7 @@ suite('Editor Commands - ShiftCommand', () => {
 				insertSpaces: true,
 				useTabStops: false,
 				autoIndent: EditorAutoIndentStrategy.Full,
+				isVimDentation: false,
 			}, new TestLanguageConfigurationService()),
 			[
 				'   Written | Numeric',
@@ -856,6 +862,7 @@ suite('Editor Commands - ShiftCommand', () => {
 				insertSpaces: false,
 				useTabStops: true,
 				autoIndent: EditorAutoIndentStrategy.Full,
+				isVimDentation: false,
 			}, new TestLanguageConfigurationService()),
 			[
 				'\tHello world!',
@@ -967,6 +974,7 @@ suite('Editor Commands - ShiftCommand', () => {
 					insertSpaces: insertSpaces,
 					useTabStops: true,
 					autoIndent: EditorAutoIndentStrategy.Full,
+					isVimDentation: false,
 				}, new TestLanguageConfigurationService());
 				const actual = getEditOperation(model, op);
 				assert.deepStrictEqual(actual, expected);
@@ -982,6 +990,7 @@ suite('Editor Commands - ShiftCommand', () => {
 					insertSpaces: insertSpaces,
 					useTabStops: true,
 					autoIndent: EditorAutoIndentStrategy.Full,
+					isVimDentation: false,
 				}, new TestLanguageConfigurationService());
 				const actual = getEditOperation(model, op);
 				assert.deepStrictEqual(actual, expected);
