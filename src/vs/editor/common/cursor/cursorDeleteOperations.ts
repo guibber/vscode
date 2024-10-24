@@ -14,6 +14,7 @@ import { Selection } from '../core/selection.js';
 import { ICommand } from '../editorCommon.js';
 import { StandardAutoClosingPairConditional } from '../languages/languageConfiguration.js';
 import { Position } from '../core/position.js';
+import { vimGetDeleteLeftReplacementText } from '../model/vimDentation.js';
 
 export class DeleteOperations {
 
@@ -163,7 +164,7 @@ export class DeleteOperations {
 				shouldPushStackElementBefore = true;
 			}
 
-			commands[i] = new ReplaceCommand(deleteRange, '');
+			commands[i] = new ReplaceCommand(deleteRange, vimGetDeleteLeftReplacementText(config, model, selections[i]));
 		}
 		return [shouldPushStackElementBefore, commands];
 

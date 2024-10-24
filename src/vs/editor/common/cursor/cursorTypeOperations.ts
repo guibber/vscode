@@ -28,7 +28,8 @@ export class TypeOperations {
 				indentSize: config.indentSize,
 				insertSpaces: config.insertSpaces,
 				useTabStops: config.useTabStops,
-				autoIndent: config.autoIndent
+				autoIndent: config.autoIndent,
+				isVimDentation: config.isVimDentation
 			}, config.languageConfigurationService);
 		}
 		return commands;
@@ -43,7 +44,8 @@ export class TypeOperations {
 				indentSize: config.indentSize,
 				insertSpaces: config.insertSpaces,
 				useTabStops: config.useTabStops,
-				autoIndent: config.autoIndent
+				autoIndent: config.autoIndent,
+				isVimDentation: config.isVimDentation
 			}, config.languageConfigurationService);
 		}
 		return commands;

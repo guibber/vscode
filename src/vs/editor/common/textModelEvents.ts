@@ -120,6 +120,7 @@ export interface IModelOptionsChangedEvent {
 	readonly indentSize: boolean;
 	readonly insertSpaces: boolean;
 	readonly trimAutoWhitespace: boolean;
+	readonly isVimDentation: boolean;
 }
 
 /**

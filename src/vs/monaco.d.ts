@@ -1942,6 +1942,7 @@ declare namespace monaco.editor {
 		readonly defaultEOL: DefaultEndOfLine;
 		readonly trimAutoWhitespace: boolean;
 		readonly bracketPairColorizationOptions: BracketPairColorizationOptions;
+		readonly isVimDentation: boolean;
 		get originalIndentSize(): number | 'tabSize';
 	}
 
@@ -1956,6 +1957,7 @@ declare namespace monaco.editor {
 		insertSpaces?: boolean;
 		trimAutoWhitespace?: boolean;
 		bracketColorizationOptions?: BracketPairColorizationOptions;
+		isVimDentation?: boolean;
 	}
 
 	export class FindMatch {
@@ -2965,6 +2967,7 @@ declare namespace monaco.editor {
 		readonly indentSize: boolean;
 		readonly insertSpaces: boolean;
 		readonly trimAutoWhitespace: boolean;
+		readonly isVimDentation: boolean;
 	}
 
 	/**

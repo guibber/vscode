@@ -68,8 +68,8 @@ export class MoveLinesCommand implements ICommand {
 			s = s.setEndPosition(s.endLineNumber - 1, model.getLineMaxColumn(s.endLineNumber - 1));
 		}
 
-		const { tabSize, indentSize, insertSpaces } = model.getOptions();
-		const indentConverter = this.buildIndentConverter(tabSize, indentSize, insertSpaces);
+		const { tabSize, indentSize, insertSpaces, isVimDentation } = model.getOptions();
+		const indentConverter = this.buildIndentConverter(tabSize, indentSize, insertSpaces, isVimDentation);
 
 		if (s.startLineNumber === s.endLineNumber && model.getLineMaxColumn(s.startLineNumber) === 1) {
 			// Current line is empty
@@ -282,13 +282,13 @@ export class MoveLinesCommand implements ICommand {
 		this._selectionId = builder.trackSelection(s);
 	}
 
-	private buildIndentConverter(tabSize: number, indentSize: number, insertSpaces: boolean): IIndentConverter {
+	private buildIndentConverter(tabSize: number, indentSize: number, insertSpaces: boolean, isVimDentation: boolean): IIndentConverter {
 		return {
 			shiftIndent: (indentation) => {
-				return ShiftCommand.shiftIndent(indentation, indentation.length + 1, tabSize, indentSize, insertSpaces);
+				return ShiftCommand.shiftIndent(indentation, indentation.length + 1, tabSize, indentSize, insertSpaces, isVimDentation);
 			},
 			unshiftIndent: (indentation) => {
-				return ShiftCommand.unshiftIndent(indentation, indentation.length + 1, tabSize, indentSize, insertSpaces);
+				return ShiftCommand.unshiftIndent(indentation, indentation.length + 1, tabSize, indentSize, insertSpaces, isVimDentation);
 			}
 		};
 	}

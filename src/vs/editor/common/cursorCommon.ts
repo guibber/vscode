@@ -54,6 +54,7 @@ export class CursorConfiguration {
 	public readonly tabSize: number;
 	public readonly indentSize: number;
 	public readonly insertSpaces: boolean;
+	public readonly isVimDentation: boolean;
 	public readonly stickyTabStops: boolean;
 	public readonly pageSize: number;
 	public readonly lineHeight: number;
@@ -118,6 +119,7 @@ export class CursorConfiguration {
 		this.tabSize = modelOptions.tabSize;
 		this.indentSize = modelOptions.indentSize;
 		this.insertSpaces = modelOptions.insertSpaces;
+		this.isVimDentation = modelOptions.isVimDentation;
 		this.stickyTabStops = options.get(EditorOption.stickyTabStops);
 		this.lineHeight = fontInfo.lineHeight;
 		this.typicalHalfwidthCharacterWidth = fontInfo.typicalHalfwidthCharacterWidth;

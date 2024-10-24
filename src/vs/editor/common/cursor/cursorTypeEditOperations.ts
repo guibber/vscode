@@ -23,6 +23,7 @@ import { EditorAutoClosingStrategy, EditorAutoIndentStrategy } from '../config/e
 import { createScopedLineTokens } from '../languages/supports.js';
 import { getIndentActionForType, getIndentForEnter, getInheritIndentForLine } from '../languages/autoIndent.js';
 import { getEnterAction } from '../languages/enterAction.js';
+import { vimGetTabOperationReplacementCommandWhenNoSelection, vimGetTabOperationReplaceCommandThatPreservesSelection } from '../model/vimDentation.js';
 
 export class AutoIndentOperation {
 
@@ -764,7 +765,10 @@ export class TabOperation {
 			const selection = selections[i];
 			if (selection.isEmpty()) {
 				const lineText = model.getLineContent(selection.startLineNumber);
-				if (/^\s*$/.test(lineText) && model.tokenization.isCheapToTokenize(selection.startLineNumber)) {
+				if (config.isVimDentation) {
+					commands[i] = vimGetTabOperationReplacementCommandWhenNoSelection(config, model, selection);
+					continue;
+				} else if (/^\s*$/.test(lineText) && model.tokenization.isCheapToTokenize(selection.startLineNumber)) {
 					let goodIndent = this._goodIndentForLine(config, model, selection.startLineNumber);
 					goodIndent = goodIndent || '\t';
 					const possibleTypeText = config.normalizeIndentation(goodIndent);
@@ -778,9 +782,14 @@ export class TabOperation {
 				if (selection.startLineNumber === selection.endLineNumber) {
 					const lineMaxColumn = model.getLineMaxColumn(selection.startLineNumber);
 					if (selection.startColumn !== 1 || selection.endColumn !== lineMaxColumn) {
-						// This is a single line selection that is not the entire line
-						commands[i] = this._replaceJumpToNextIndent(config, model, selection, false);
-						continue;
+						if (config.isVimDentation) {
+							commands[i] = vimGetTabOperationReplaceCommandThatPreservesSelection(config, model, selection);
+							continue;
+						} else {
+							// This is a single line selection that is not the entire line
+							commands[i] = this._replaceJumpToNextIndent(config, model, selection, false);
+							continue;
+						}
 					}
 				}
 				commands[i] = new ShiftCommand(selection, {
@@ -789,7 +798,8 @@ export class TabOperation {
 					indentSize: config.indentSize,
 					insertSpaces: config.insertSpaces,
 					useTabStops: config.useTabStops,
-					autoIndent: config.autoIndent
+					autoIndent: config.autoIndent,
+					isVimDentation: config.isVimDentation,
 				}, config.languageConfigurationService);
 			}
 		}
@@ -1012,12 +1022,12 @@ function typeCommand(range: Range, text: string, keepPosition: boolean): IComman
 
 export function shiftIndent(config: CursorConfiguration, indentation: string, count?: number): string {
 	count = count || 1;
-	return ShiftCommand.shiftIndent(indentation, indentation.length + count, config.tabSize, config.indentSize, config.insertSpaces);
+	return ShiftCommand.shiftIndent(indentation, indentation.length + count, config.tabSize, config.indentSize, config.insertSpaces, config.isVimDentation);
 }
 
 export function unshiftIndent(config: CursorConfiguration, indentation: string, count?: number): string {
 	count = count || 1;
-	return ShiftCommand.unshiftIndent(indentation, indentation.length + count, config.tabSize, config.indentSize, config.insertSpaces);
+	return ShiftCommand.unshiftIndent(indentation, indentation.length + count, config.tabSize, config.indentSize, config.insertSpaces, config.isVimDentation);
 }
 
 export function shouldSurroundChar(config: CursorConfiguration, ch: string): boolean {
